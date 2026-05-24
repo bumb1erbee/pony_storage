@@ -1,0 +1,29 @@
+name: Upload Images from Gallery
+
+on:
+  repository_dispatch:
+    types: [upload-images]
+
+jobs:
+  save-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Decode and save image
+        run: |
+          mkdir -p uploads
+          echo '${{ github.event.client_payload.base64 }}' | base64 -d > "uploads/${{ github.event.client_payload.filename }}"
+          ls -la uploads/
+      
+      - name: Commit and push
+        run: |
+          git config user.name "Gallery Bot"
+          git config user.email "gallery-bot@ponygallery.local"
+          git add uploads/
+          git diff --staged --quiet || git commit -m "Add image: ${{ github.event.client_payload.filename }}"
+          git push
